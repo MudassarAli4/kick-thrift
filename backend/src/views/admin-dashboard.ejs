@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline' 'unsafe-eval' data: blob: https:; font-src * data: blob: https: 'unsafe-inline'; style-src * 'unsafe-inline' data: https:; script-src * 'unsafe-inline' 'unsafe-eval' https:; img-src * data: blob: https:; connect-src * https:; frame-src * https:; object-src 'none'; base-uri 'self'; form-action 'self';" />
+    <title>Admin Dashboard</title>
+    <style>
+      * { box-sizing: border-box;
+margin: 0; padding: 0; }
+      body { font-family: Arial, Helvetica, sans-serif; background: #f5f5f5; margin: 0;
+}
+      
+      /* Sidebar */
+      .sidebar { position: fixed;
+left: 0; top: 0; width: 250px; height: 100vh; background: #1a1a1a; color: #fff; padding: 20px 0; overflow-y: auto; z-index: 100;
+}
+      .sidebar-header { padding: 0 20px 30px; border-bottom: 1px solid #333; margin-bottom: 20px;
+}
+      .sidebar-header h1 { color: #fff; font-size: 1.5rem;
+}
+      .nav-menu { list-style: none; }
+      .nav-item { margin: 0;
+}
+      .nav-link { display: block; padding: 15px 20px; color: #ccc; text-decoration: none; transition: all 0.3s;
+border-left: 3px solid transparent; }
+      .nav-link:hover { background: #2a2a2a; color: #fff; border-left-color: #007bff;
+}
+      .nav-link.active { background: #2a2a2a; color: #fff; border-left-color: #007bff;
+}
+      
+      /* Main Content */
+      .main-content { margin-left: 250px;
+padding: 30px; min-height: 100vh; }
+      .top-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;
+padding-bottom: 20px; border-bottom: 2px solid #ddd; }
+      .top-header h2 { color: #333; font-size: 1.8rem;
+}
+      
+      .grid { display: grid; grid-template-columns: 1fr; gap: 24px;
+}
+      .card { background: #fff; border: 1px solid #eee; border-radius: 8px; padding: 20px;
+box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+      table { width: 100%; border-collapse: collapse; margin-top: 16px;
+}
+      th, td { text-align: left; padding: 12px; border-bottom: 1px solid #f0f0f0;
+}
+      th { background: #f8f8f8; font-weight: 600;
+}
+      h1 { margin: 0; color: #333;
+}
+      h2 { margin: 0 0 16px; color: #333; font-size: 1.25rem;
+}
+      h3 { margin: 16px 0 8px; color: #555; font-size: 1rem;
+}
+      input, select, textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;
+font-size: 14px; }
+      textarea { min-height: 80px; resize: vertical;
+}
+      button { padding: 10px 16px; background: #111; color: #fff; border: none; border-radius: 4px;
+cursor: pointer; font-size: 14px; }
+      button:hover { background: #333;
+}
+      button.danger { background: #dc3545; }
+      button.danger:hover { background: #c82333;
+}
+      .form-group { margin-bottom: 16px; }
+      .form-row { display: grid;
+grid-template-columns: 1fr 1fr; gap: 12px; }
+      .form-label { display: block; margin-bottom: 6px; color: #555;
+font-weight: 500; font-size: 14px; }
+      .checkbox-group { display: flex; align-items: center; gap: 8px;
+}
+      .checkbox-group input[type="checkbox"] { width: auto;
+}
+      .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;
+}
+      .stat { background: #fff; border: 1px solid #ddd; padding: 20px; border-radius: 8px;
+box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+      .stat-label { color: #666; font-size: 0.9rem; margin-bottom: 8px;
+}
+      .stat-value { color: #333; font-size: 2rem; font-weight: bold;
+}
+      .error { background: #fee; color: #c33; padding: 12px; border-radius: 4px; margin-bottom: 16px;
+}
+      .success { background: #efe; color: #3c3; padding: 12px; border-radius: 4px; margin-bottom: 16px;
+}
+      .image-preview { max-width: 200px; max-height: 200px; margin-top: 8px; border: 1px solid #ddd; border-radius: 4px;
+}
+      .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+background: rgba(0,0,0,0.5); z-index: 1000; overflow-y: auto; }
+      .modal-content { background: #fff; margin: 50px auto;
+padding: 30px; border-radius: 8px; max-width: 800px; width: 90%; position: relative; }
+      .modal-header { display: flex;
+justify-content: space-between; align-items: center; margin-bottom: 20px; }
+      .close-modal { background: #dc3545; padding: 8px 16px;
+}
+      .btn-group { display: flex; gap: 8px;
+}
+      button.edit { background: #007bff; }
+      button.edit:hover { background: #0056b3;
+}
+      @media (max-width: 968px) {
+        .sidebar { width: 200px;
+}
+        .main-content { margin-left: 200px; padding: 20px;
+}
+        .grid { grid-template-columns: 1fr;
+}
+        .form-row { grid-template-columns: 1fr;
+}
+      }
+      
+      @media (max-width: 768px) {
+        .sidebar { transform: translateX(-100%);
+transition: transform 0.3s; }
+        .sidebar.open { transform: translateX(0);
+}
+        .main-content { margin-left: 0;
+}
+        .mobile-menu-btn { display: block; position: fixed; top: 20px; left: 20px; z-index: 101;
+background: #1a1a1a; color: #fff; border: none; padding: 10px; border-radius: 4px; cursor: pointer;
+}
+      }
+      
+      .mobile-menu-btn { display: none;
+}
+    </style>
+  </head>
+  <body>
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h1>Kick Thrift Admin</h1>
+      </div>
+      <nav>
+        <ul class="nav-menu">
+          <li class="nav-item">
+            <a href="/admin/dashboard" class="nav-link active">Dashboard</a>
+          </li>
+          <!-- <li class="nav-item">
+            <a href="/admin/dashboard" class="nav-link">Products</a>
+          </li> -->
+          <li class="nav-item">
+            <a href="/admin/orders" class="nav-link">Orders</a>
+          </li>
+          <!-- <li class="nav-item">
+            <a href="/admin/dashboard" class="nav-link">Customers</a>
+          </li>
+          <li class="nav-item">
+            <a href="/admin/dashboard" class="nav-link">Settings</a>
+          </li> -->
+        </ul>
+      </nav>
+      <div style="padding: 20px; border-top: 1px solid #333; margin-top: auto;">
+        <form action="/admin/logout" method="post" style="margin: 0;">
+          <button type="submit" style="width: 100%;
+padding: 12px; background: #dc3545; color: #fff; border: none; border-radius: 4px;
+cursor: pointer;">Logout</button>
+        </form>
+      </div>
+    </aside>
+
+    <button class="mobile-menu-btn" id="mobile-menu-btn">☰</button>
+
+    <main class="main-content">
+      <div class="top-header">
+        <h2>Dashboard</h2>
+      </div>
+
+      <% if (error) { %>
+        <div class="error"><%= error %></div>
+      <% } %>
+
+     
+ <section class="stats">
+        <div class="stat">
+          <div class="stat-label">Total Products</div>
+          <div class="stat-value"><%= products.length %></div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Pending Deliveries</div>
+          <div class="stat-value"><%= pendingDeliveries %></div>
+        </div>
+        <div class="stat">
+     
+     <div class="stat-label">New Deliveries</div>
+          <div class="stat-value"><%= newDeliveries %></div>
+        </div>
+      </section>
+
+    <div class="grid" style="margin-top: 24px;">
+      <div class="card">
+        <h2>Add New Product</h2>
+        <form id="product-form" enctype="multipart/form-data">
+           <div class="form-group">
+             <label class="form-label">Product Name *</label>
+       
+       <input type="text" id="p-name" name="name" placeholder="e.g., Chanel (Two Tone-Gold)" required />
+           </div>
+
+           <div class="form-group">
+             <label class="form-label">On Sale</label>
+         
+       <div class="checkbox-group">
+                 <input type="checkbox" id="p-onsale" name="onSale" />
+                 <span>Mark as on sale</span>
+               </div>
+           </div>
+
+           <div class="form-row">
+             <div class="form-group">
+               <label class="form-label">Regular Price (PKR) *</label>
+               <input type="number" id="p-price" name="price" placeholder="7499" step="0.01" required />
+             
+ </div>
+             <div class="form-group" id="p-oldprice-group" style="display: none;">
+               <label class="form-label">Sale Price (PKR)</label>
+               <input type="number" id="p-oldprice" name="oldPrice" placeholder="6499" step="0.01" />
+             </div>
+           </div>
+
+           <div class="form-group">
+             <label class="form-label">Product Image *</label>
+   
+           <input type="file" id="p-image" name="image" accept="image/*" required />
+             <img id="image-preview" class="image-preview" style="display: none;" />
+           </div>
+
+           <div class="form-row">
+             <div class="form-group">
+               <label class="form-label">Availability *</label>
+               <select id="p-availability" name="availability" 
+ required>
+                 <option value="in-stock">In Stock</option>
+                 <option value="out-of-stock">Out of Stock</option>
+               </select>
+             </div>
+           </div>
+
+          <h3>Product Specifications</h3>
+       
+   
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Brand</label>
+              <input type="text" id="p-Brand" name="Brand" placeholder="e.g., Nike" />
+            </div>
+            <div class="form-group">
+             
+ <label class="form-label">Model</label>
+              <input type="text" id="p-Model" name="Model" placeholder="e.g., Gold Model" />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Material</label>
+              
+<input type="text" id="p-chainstrap" name="chainStrap" placeholder="e.g., Mesh and synthetic" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Case</label>
+              <input type="text" id="p-case" name="case" placeholder="e.g., Rubber outsole" />
+            </div>
+          </div>
+
+         
+ <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Sole</label>
+              <input type="text" id="p-caseback" name="caseBack" placeholder="e.g., Rubber outsole" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Closure</label>
+        
+      <input type="text" id="p-Closure" name="Closure" placeholder="e.g., Lace-up" />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Condition</label>
+              <input type="text" id="p-Condition" name="Condition" placeholder="e.g., New / Like New" />
+      
+      </div>
+            <div class="form-group">
+              <label class="form-label">Size</label>
+              <input type="text" id="p-size" name="size" placeholder="e.g., 24mm" />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div 
+class="form-group">
+              <label class="form-label">Weight</label>
+              <input type="text" id="p-weight" name="weight" placeholder="e.g., 36 grams" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Color</label>
+              <input type="text" id="p-color" name="color" placeholder="e.g., Two Tone-Gold" />
+   
+         </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Style</label>
+              <input type="text" id="p-Style" name="Style" placeholder="e.g., Low-top" />
+            </div>
+          
+  <div class="form-group">
+              <label class="form-label">Authenticity</label>
+              <input type="text" id="p-Authenticity" name="Authenticity" placeholder="e.g., 12 Months Authenticity" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Description</label>
+            <textarea id="p-description" 
+name="description" placeholder="Product description..."></textarea>
+          </div>
+
+          <div style="margin-top: 20px;">
+            <button type="submit">Add Product</button>
+            <button type="button" id="reset-form-btn" style="background: #6c757d;
+margin-left: 8px;">Reset</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div id="edit-modal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Edit Product</h2>
+          <button class="close-modal" id="close-edit-modal">Close</button>
+        </div>
+        <form id="edit-product-form" 
+enctype="multipart/form-data">
+          <input type="hidden" id="edit-id" name="id" />
+           <div class="form-group">
+             <label class="form-label">Product Name *</label>
+             <input type="text" id="edit-name" name="name" required />
+           </div>
+
+           <div class="form-group">
+             <label class="form-label">On Sale</label>
+               <div class="checkbox-group">
+                 <input type="checkbox" id="edit-onsale" name="onSale" />
+                
+  <span>Mark as on sale</span>
+               </div>
+           </div>
+
+           <div class="form-row">
+             <div class="form-group">
+          
+      <label class="form-label">Regular Price (PKR) *</label>
+               <input type="number" id="edit-price" name="price" step="0.01" required />
+             </div>
+             <div class="form-group" id="edit-oldprice-group" style="display: none;">
+               <label class="form-label">Sale Price (PKR)</label>
+               <input type="number" id="edit-oldprice" name="oldPrice" step="0.01" />
+             </div>
+           </div>
+
+           <div class="form-group">
+             <label class="form-label">Product Image (leave empty to keep current)</label>
+             <input type="file" id="edit-image" name="image" accept="image/*" />
+             <img id="edit-image-preview" class="image-preview" style="display: none;" />
+             <div id="edit-current-image" style="margin-top: 8px;"></div>
+          
+  </div>
+
+           <div class="form-row">
+             <div class="form-group">
+               <label class="form-label">Availability *</label>
+               <select id="edit-availability" name="availability" required>
+                 <option value="in-stock">In Stock</option>
+                 <option value="out-of-stock">Out of Stock</option>
+      
+          </select>
+             </div>
+           </div>
+
+          <h3>Product Specifications</h3>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label 
+class="form-label">Brand</label>
+              <input type="text" id="edit-Brand" name="Brand" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Model</label>
+              <input type="text" id="edit-Model" name="Model" />
+            </div>
+          </div>
+
+  
+        <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Material</label>
+              <input type="text" id="edit-chainstrap" name="chainStrap" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Case</label>
+   
+           <input type="text" id="edit-case" name="case" />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Sole</label>
+              <input type="text" id="edit-caseback" name="caseBack" />
+     
+       </div>
+            <div class="form-group">
+              <label class="form-label">Closure</label>
+              <input type="text" id="edit-Closure" name="Closure" />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+ 
+             <label class="form-label">Condition</label>
+              <input type="text" id="edit-Condition" name="Condition" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Size</label>
+              <input type="text" id="edit-size" name="size" />
+          
+  </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Weight</label>
+              <input type="text" id="edit-weight" name="weight" />
+            </div>
+            <div class="form-group">
+      
+        <label class="form-label">Color</label>
+              <input type="text" id="edit-color" name="color" />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Style</label>
+            
+  <input type="text" id="edit-Style" name="Style" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Authenticity</label>
+              <input type="text" id="edit-Authenticity" name="Authenticity" />
+            </div>
+          </div>
+
+          <div class="form-group">
+   
+         <label class="form-label">Description</label>
+            <textarea id="edit-description" name="description"></textarea>
+          </div>
+
+          <div style="margin-top: 20px;">
+            <button type="submit">Update Product</button>
+            <button type="button" id="cancel-edit-btn" style="background: #6c757d;
+margin-left: 8px;">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:24px;">
+      <h2>Products (<%= products.length %>)</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Price</th>
+        
+    <th>Sale Price</th>
+            <th>Availability</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="products-body">
+          <% products.forEach(p => { %>
+            <tr>
+              <td><%= p.name %></td>
+  
+            <td>Rs.<%= p.price ? p.price.toLocaleString() : '0' %> PKR</td>
+              <td><%= p.oldPrice ? 'Rs.' + p.oldPrice.toLocaleString() + ' PKR' : '-' %></td>
+            <td><%= p.availability === 'in-stock' ? 'In Stock' : 'Out of Stock' %></td>
+            <td>
+              <div class="btn-group">
+      
+          <button class="edit" data-product-id="<%= p._id %>" data-action="edit">Edit</button>
+                <button class="danger" data-product-id="<%= p._id %>" data-action="delete">Delete</button>
+              </div>
+            </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      
+</table>
+    </div>
+
+    <script>
+      // Toggle sale price field based on "On Sale" checkbox (Add Product Form)
+      function toggleSalePriceField() {
+        const onSaleCheckbox = document.getElementById('p-onsale');
+        const salePriceGroup = document.getElementById('p-oldprice-group');
+        
+        if (onSaleCheckbox && salePriceGroup) {
+          if (onSaleCheckbox.checked) {
+            salePriceGroup.style.display = 'block';
+          } else {
+            salePriceGroup.style.display = 'none';
+            // Clear the value when hidden
+            document.getElementById('p-oldprice').value = '';
+          }
+        }
+      }
+      
+      // Toggle sale price field based on "On Sale" checkbox (Edit Product Form)
+      function toggleEditSalePriceField() {
+        const onSaleCheckbox = document.getElementById('edit-onsale');
+        const salePriceGroup = document.getElementById('edit-oldprice-group');
+        
+        if (onSaleCheckbox && salePriceGroup) {
+          if (onSaleCheckbox.checked) {
+            salePriceGroup.style.display = 'block';
+          } else {
+            salePriceGroup.style.display = 'none';
+            // Clear the value when hidden
+            document.getElementById('edit-oldprice').value = '';
+          }
+        }
+      }
+      
+      // Add event listeners for "On Sale" checkboxes
+      document.addEventListener('DOMContentLoaded', function() {
+        // Add Product Form
+        const addOnSaleCheckbox = document.getElementById('p-onsale');
+        if (addOnSaleCheckbox) {
+          addOnSaleCheckbox.addEventListener('change', toggleSalePriceField);
+        }
+        
+        // Edit Product Form
+        const editOnSaleCheckbox = document.getElementById('edit-onsale');
+        if (editOnSaleCheckbox) {
+          editOnSaleCheckbox.addEventListener('change', toggleEditSalePriceField);
+        }
+      });
+      
+      // Image preview
+      document.getElementById('p-image').addEventListener('change', function(e) {
+        const file = e.target.files[0]
+        if (file) {
+          const reader = new FileReader()
+          reader.onload = function(e) {
+            const preview = document.getElementById('image-preview')
+            preview.src 
+= e.target.result
+            preview.style.display = 'block'
+          }
+          reader.readAsDataURL(file)
+        }
+      })
+
+      // Product form submission
+      document.getElementById('product-form').addEventListener('submit', async function(e) {
+        e.preventDefault()
+        const formData = new FormData(this)
+        const submitBtn = this.querySelector('button[type="submit"]')
+  
+      const originalText = submitBtn.textContent
+        
+        // Disable button and show loading
+        submitBtn.disabled = true
+        submitBtn.textContent = 'Adding...'
+        
+        try {
+          const res = await fetch('/api/products', {
+            method: 'POST',
+     
+       body: formData
+          })
+          
+          // --- FIX START: Read as text first, then parse ---
+          const responseText = await res.text();
+          let data;
+          try {
+            data = JSON.parse(responseText);
+          } catch (parseErr) {
+            // Not JSON, use the raw text for error
+          }
+          // --- FIX END ---
+          
+          if (res.ok) {
+            alert('Product added successfully!')
+            // Reset form
+            this.reset()
+            document.getElementById('image-preview').style.display = 'none'
+ 
+           // Reload page to show new product
+            setTimeout(() => location.reload(), 500)
+          } else {
+            // Use parsed message if available, otherwise use raw text
+            const errorMessage = (data && data.message) ? data.message : responseText;
+            alert('Failed to add product: ' + (errorMessage ||
+'Unknown error'))
+            submitBtn.disabled = false
+            submitBtn.textContent = originalText
+          }
+        } catch (err) {
+          console.error('Product creation error:', err)
+          alert('Error: ' + err.message)
+          submitBtn.disabled = false
+          submitBtn.textContent = 
+originalText
+        }
+      })
+
+      function resetForm() {
+        document.getElementById('product-form').reset()
+        document.getElementById('image-preview').style.display = 'none'
+      }
+
+      // Reset form button
+      document.getElementById('reset-form-btn').addEventListener('click', resetForm)
+
+      async function editProduct(id) {
+        try {
+          const res = await fetch('/api/products/' + id)
+    
+      const data = await res.json()
+          if (!res.ok) {
+            alert('Failed to load product: ' + (data.message || 'Unknown error'))
+            return
+          }
+          
+          const product = data.data
+          
+  
+        // Populate edit form
+          document.getElementById('edit-id').value = product._id
+          document.getElementById('edit-name').value = product.name ||
+''
+          document.getElementById('edit-price').value = product.price ||
+''
+          document.getElementById('edit-oldprice').value = product.oldPrice ||
+''
+          document.getElementById('edit-availability').value = product.availability ||
+'in-stock'
+          document.getElementById('edit-onsale').checked = product.onSale ||
+false
+          
+          // Show/hide sale price field based on onSale status
+          toggleEditSalePriceField()
+          document.getElementById('edit-Brand').value = product.Brand ||
+''
+          document.getElementById('edit-Model').value = product.Model ||
+''
+          document.getElementById('edit-chainstrap').value = product.chainStrap ||
+''
+          document.getElementById('edit-case').value = product.case ||
+''
+          document.getElementById('edit-caseback').value = product.caseBack ||
+''
+          document.getElementById('edit-Closure').value = product.Closure ||
+''
+          document.getElementById('edit-Condition').value = product.Condition ||
+''
+          document.getElementById('edit-size').value = product.size ||
+''
+          document.getElementById('edit-weight').value = product.weight ||
+''
+          document.getElementById('edit-color').value = product.color ||
+''
+          document.getElementById('edit-Style').value = product.Style ||
+''
+          document.getElementById('edit-Authenticity').value = product.Authenticity ||
+''
+          document.getElementById('edit-description').value = product.description ||
+''
+          
+          // Show current image
+          const currentImageDiv = document.getElementById('edit-current-image')
+          if (product.image) {
+            currentImageDiv.innerHTML = `<p><strong>Current Image:</strong></p><img src="${product.image}" class="image-preview" style="display: block;"
+/>`
+          } else {
+            currentImageDiv.innerHTML = ''
+          }
+          
+          // Reset image preview
+          document.getElementById('edit-image-preview').style.display = 'none'
+          document.getElementById('edit-image').value = ''
+          
+       
+   // Show modal
+          document.getElementById('edit-modal').style.display = 'block'
+        } catch (err) {
+          console.error('Edit product error:', err)
+          alert('Error loading product: ' + err.message)
+        }
+      }
+
+      function closeEditModal() {
+        document.getElementById('edit-modal').style.display = 'none'
+        document.getElementById('edit-product-form').reset()
+    
+  }
+
+      // Edit image preview
+      document.getElementById('edit-image').addEventListener('change', function(e) {
+        const file = e.target.files[0]
+        if (file) {
+          const reader = new FileReader()
+          reader.onload = function(e) {
+            const preview = document.getElementById('edit-image-preview')
+            preview.src = e.target.result
+    
+        preview.style.display = 'block'
+            document.getElementById('edit-current-image').innerHTML = '<p><em>New image selected</em></p>'
+          }
+          reader.readAsDataURL(file)
+        }
+      })
+
+      // Edit form submission
+      document.getElementById('edit-product-form').addEventListener('submit', async function(e) {
+        e.preventDefault()
+        const formData = new FormData(this)
+  
+      const productId = document.getElementById('edit-id').value
+        const submitBtn = this.querySelector('button[type="submit"]')
+        const originalText = submitBtn.textContent
+        
+        submitBtn.disabled = true
+        submitBtn.textContent = 'Updating...'
+        
+        try {
+          const res = await fetch('/api/products/' + productId, {
+       
+     method: 'PUT',
+            body: formData
+          })
+          
+          // --- FIX START: Read as text first, then parse ---
+          const responseText = await res.text();
+          let data;
+          try {
+            data = JSON.parse(responseText);
+          } catch (parseErr) {
+            // Not JSON, use the raw text for error
+          }
+          // --- FIX END ---
+          
+          if (res.ok) {
+            alert('Product updated successfully!')
+            closeEditModal()
+            setTimeout(() => location.reload(), 500)
+   
+       } else {
+            // Use parsed message if available, otherwise use raw text
+            const errorMessage = (data && data.message) ? data.message : responseText;
+            alert('Failed to update product: ' + (errorMessage ||
+'Unknown error'))
+            submitBtn.disabled = false
+            submitBtn.textContent = originalText
+          }
+        } catch (err) {
+          console.error('Update product error:', err)
+          alert('Error: ' + err.message)
+          submitBtn.disabled = false
+          submitBtn.textContent = 
+originalText
+        }
+      })
+
+      // Close modal when clicking outside
+      document.getElementById('edit-modal').addEventListener('click', function(e) {
+        if (e.target === this) {
+          closeEditModal()
+        }
+      })
+
+      // Close modal buttons
+      document.getElementById('close-edit-modal').addEventListener('click', closeEditModal)
+      document.getElementById('cancel-edit-btn').addEventListener('click', closeEditModal)
+
+      // Mobile menu toggle
+      const mobileMenuBtn = document.getElementById('mobile-menu-btn')
+      const sidebar = document.querySelector('.sidebar')
+      if (mobileMenuBtn) {
+        mobileMenuBtn.addEventListener('click', function() {
+          sidebar.classList.toggle('open')
+        })
+      }
+
+      // Edit and Delete button handlers (using event delegation)
+      document.addEventListener('click', function(e) {
+        if (e.target.dataset.action === 'edit') {
+     
+     editProduct(e.target.dataset.productId)
+        } else if (e.target.dataset.action === 'delete') {
+          deleteProduct(e.target.dataset.productId)
+        }
+      })
+
+      async function deleteProduct(id) {
+        if (!confirm('Delete this product?')) return
+        try {
+          const res = await fetch('/api/products/' + id, { method: 'DELETE' })
+       
+   if (res.ok) {
+            alert('Product deleted successfully!')
+            location.reload()
+          } else {
+            const data = await res.json()
+            alert('Failed to delete product: ' + (data.message ||
+'Unknown error'))
+          }
+        } catch (err) {
+          alert('Error: ' + err.message)
+        }
+      }
+
+    </script>
+  </body>
+</html>

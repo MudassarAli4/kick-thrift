@@ -1,0 +1,26 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "api/index.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/admin/(.*)",
+      "dest": "api/index.js",
+      "headers": {
+        "Content-Security-Policy": "default-src * 'unsafe-inline' 'unsafe-eval' data: blob: https:; font-src * data: blob: https: 'unsafe-inline'; style-src * 'unsafe-inline' data: https:; script-src * 'unsafe-inline' 'unsafe-eval' https:; img-src * data: blob: https:; connect-src * https:; frame-src * https:; object-src 'none'; base-uri 'self'; form-action 'self';"
+      }
+    },
+    {
+      "src": "/(.*)",
+      "dest": "api/index.js"
+    }
+  ],
+  "env": {
+    "NODE_ENV": "production"
+  }
+}
+

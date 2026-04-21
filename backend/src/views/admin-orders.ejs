@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline' 'unsafe-eval' data: blob: https:; font-src * data: blob: https: 'unsafe-inline'; style-src * 'unsafe-inline' data: https:; script-src * 'unsafe-inline' 'unsafe-eval' https:; img-src * data: blob: https:; connect-src * https:; frame-src * https:; object-src 'none'; base-uri 'self'; form-action 'self';" />
+    <title>Kick Thrift Admin Orders</title>
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body { font-family: Arial, Helvetica, sans-serif; background: #f5f5f5; margin: 0; }
+      
+      /* Sidebar */
+      .sidebar { position: fixed; left: 0; top: 0; width: 250px; height: 100vh; background: #1a1a1a; color: #fff; padding: 20px 0; overflow-y: auto; z-index: 100; }
+      .sidebar-header { padding: 0 20px 30px; border-bottom: 1px solid #333; margin-bottom: 20px; }
+      .sidebar-header h1 { color: #fff; font-size: 1.5rem; }
+      .nav-menu { list-style: none; }
+      .nav-item { margin: 0; }
+      .nav-link { display: block; padding: 15px 20px; color: #ccc; text-decoration: none; transition: all 0.3s; border-left: 3px solid transparent; }
+      .nav-link:hover { background: #2a2a2a; color: #fff; border-left-color: #007bff; }
+      .nav-link.active { background: #2a2a2a; color: #fff; border-left-color: #007bff; }
+      
+      /* Main Content */
+      .main-content { margin-left: 250px; padding: 30px; min-height: 100vh; }
+      .top-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid #ddd; }
+      .top-header h2 { color: #333; font-size: 1.8rem; }
+      
+      .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+      .stat { background: #fff; border: 1px solid #ddd; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+      .stat-label { color: #666; font-size: 0.9rem; margin-bottom: 8px; }
+      .stat-value { color: #333; font-size: 2rem; font-weight: bold; }
+      
+      .card { background: #fff; border: 1px solid #eee; border-radius: 8px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
+      .card h3 { margin: 0 0 16px; color: #333; font-size: 1.25rem; }
+      
+      .order-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid #eee; }
+      .order-number { font-size: 1.1rem; font-weight: bold; color: #007bff; }
+      .order-status { padding: 6px 12px; border-radius: 4px; font-size: 0.85rem; font-weight: 600; }
+      .order-status.pending { background: #fff3cd; color: #856404; }
+      .order-status.confirmed { background: #d1ecf1; color: #0c5460; }
+      .order-status.processing { background: #cce5ff; color: #004085; }
+      .order-status.shipped { background: #d4edda; color: #155724; }
+      .order-status.delivered { background: #d1e7dd; color: #0f5132; }
+      .order-status.cancelled { background: #f8d7da; color: #721c24; }
+      
+      .order-info { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-bottom: 16px; }
+      .info-section h4 { margin: 0 0 8px; color: #555; font-size: 0.9rem; text-transform: uppercase; }
+      .info-section p { margin: 4px 0; color: #333; font-size: 0.9rem; }
+      
+      .order-items { margin-top: 16px; }
+      .order-items table { width: 100%; border-collapse: collapse; }
+      .order-items th, .order-items td { text-align: left; padding: 12px; border-bottom: 1px solid #f0f0f0; }
+      .order-items th { background: #f8f8f8; font-weight: 600; }
+      .order-items img { width: 50px; height: 50px; object-fit: cover; border-radius: 4px; }
+      
+      .order-total { text-align: right; margin-top: 16px; padding-top: 16px; border-top: 2px solid #eee; }
+      .order-total strong { font-size: 1.2rem; color: #333; }
+      
+      .refresh-btn { padding: 10px 20px; background: #007bff; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; }
+      .refresh-btn:hover { background: #0056b3; }
+      .refresh-btn:disabled { background: #ccc; cursor: not-allowed; }
+      
+      .delivered-btn { padding: 10px 20px; background: #28a745; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: 600; }
+      .delivered-btn:hover { background: #218838; }
+      .delivered-btn:disabled { background: #ccc; cursor: not-allowed; }
+      
+      .error { background: #fee; color: #c33; padding: 12px; border-radius: 4px; margin-bottom: 16px; }
+      .success { background: #efe; color: #3c3; padding: 12px; border-radius: 4px; margin-bottom: 16px; }
+      
+      .auto-refresh-indicator { display: inline-block; margin-left: 10px; font-size: 0.85rem; color: #666; }
+      .auto-refresh-indicator.active { color: #28a745; }
+      
+      .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #ddd; }
+      .tab-btn { padding: 12px 24px; background: transparent; border: none; border-bottom: 3px solid transparent; cursor: pointer; font-size: 14px; font-weight: 500; color: #666; transition: all 0.3s; }
+      .tab-btn:hover { color: #333; background: #f8f9fa; }
+      .tab-btn.active { color: #007bff; border-bottom-color: #007bff; background: transparent; }
+      .tab-content { display: none; }
+      .tab-content.active { display: block; }
+      
+      @media (max-width: 968px) {
+        .sidebar { width: 200px; }
+        .main-content { margin-left: 200px; padding: 20px; }
+      }
+      
+      @media (max-width: 768px) {
+        .sidebar { transform: translateX(-100%); transition: transform 0.3s; }
+        .sidebar.open { transform: translateX(0); }
+        .main-content { margin-left: 0; }
+        .mobile-menu-btn { display: block; position: fixed; top: 20px; left: 20px; z-index: 101; background: #1a1a1a; color: #fff; border: none; padding: 10px; border-radius: 4px; cursor: pointer; }
+      }
+      
+      .mobile-menu-btn { display: none; }
+      
+      /* Modal Styles */
+      .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); }
+      .modal-content { background-color: #fefefe; margin: 5% auto; padding: 20px; border: 1px solid #888; border-radius: 8px; width: 90%; max-width: 500px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+      .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid #eee; }
+      .modal-header h2 { margin: 0; color: #333; font-size: 1.5rem; }
+      .close-modal { background: #dc3545; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px; }
+      .close-modal:hover { background: #c82333; }
+      .form-group { margin-bottom: 20px; }
+      .form-label { display: block; margin-bottom: 8px; color: #555; font-weight: 600; font-size: 0.9rem; }
+      .form-label span { color: #dc3545; }
+      .form-input, .form-select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; box-sizing: border-box; }
+      .form-input:focus, .form-select:focus { outline: none; border-color: #007bff; }
+      .current-info { background: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 20px; border-left: 4px solid #007bff; }
+      .current-info p { margin: 5px 0; color: #666; font-size: 0.9rem; }
+      .current-info strong { color: #333; }
+     </style>
+   </head>
+   <body>
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h1>Kick Thrift Admin</h1>
+      </div>
+      <nav>
+        <ul class="nav-menu">
+          <li class="nav-item">
+            <a href="/admin/dashboard" class="nav-link">Dashboard</a>
+          </li>
+          <!-- <li class="nav-item">
+            <a href="/admin/dashboard" class="nav-link">Products</a>
+          </li> -->
+          <li class="nav-item">
+            <a href="/admin/orders" class="nav-link active">Orders</a>
+          </li>
+          <!-- <li class="nav-item">
+            <a href="/admin/dashboard" class="nav-link">Customers</a>
+          </li>
+          <li class="nav-item">
+            <a href="/admin/dashboard" class="nav-link">Settings</a>
+          </li> -->
+        </ul>
+      </nav>
+      <div style="padding: 20px; border-top: 1px solid #333; margin-top: auto;">
+        <form action="/admin/logout" method="post" style="margin: 0;">
+          <button type="submit" style="width: 100%; padding: 12px; background: #dc3545; color: #fff; border: none; border-radius: 4px; cursor: pointer;">Logout</button>
+        </form>
+      </div>
+    </aside>
+
+    <button class="mobile-menu-btn" id="mobile-menu-btn">☰</button>
+
+    <main class="main-content">
+      <div class="top-header">
+        <h2>Orders</h2>
+        <button class="refresh-btn" id="refresh-btn">Refresh</button>
+      </div>
+
+      <% if (error) { %>
+        <div class="error"><%= error %></div>
+      <% } %>
+
+      <section class="stats">
+        <div class="stat">
+          <div class="stat-label">Total Orders</div>
+          <div class="stat-value" id="total-orders"><%= totalOrders %></div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Pending Orders</div>
+          <div class="stat-value" id="pending-orders"><%= pendingOrders %></div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Delivered Orders</div>
+          <div class="stat-value" id="delivered-orders"><%= orders.filter(o => o.status === 'delivered').length %></div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Last Updated</div>
+          <div class="stat-value" style="font-size: 1rem;" id="last-updated">Just now</div>
+        </div>
+      </section>
+
+      <!-- Tabs -->
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="all">All Orders (<%= totalOrders %>)</button>
+        <button class="tab-btn" data-tab="pending">Pending (<%= pendingOrders %>)</button>
+        <button class="tab-btn" data-tab="delivered">Delivered (<%= orders.filter(o => o.status === 'delivered').length %>)</button>
+      </div>
+
+      <!-- All Orders Tab -->
+      <div class="tab-content active" id="tab-all">
+        <div id="orders-container-all">
+        <% if (orders && orders.length > 0) { %>
+          <% orders.forEach(order => { %>
+            <div class="card">
+              <div class="order-header">
+                <div>
+                  <div class="order-number">Order #<%= order.orderNumber %></div>
+                  <div style="font-size: 0.85rem; color: #666; margin-top: 4px;">
+                    <%= new Date(order.createdAt).toLocaleString() %>
+                  </div>
+                </div>
+                <div class="order-status <%= order.status %>"><%= order.status.charAt(0).toUpperCase() + order.status.slice(1) %></div>
+              </div>
+
+              <div class="order-info">
+                <div class="info-section">
+                  <h4>Contact</h4>
+                  <p><strong>Email:</strong> <%= order.contact.email %></p>
+                  <p><strong>Newsletter:</strong> <%= order.contact.newsletter ? 'Yes' : 'No' %></p>
+                </div>
+                <div class="info-section">
+                  <h4>Delivery Address</h4>
+                  <p><strong><%= order.delivery.firstName %> <%= order.delivery.lastName %></strong></p>
+                  <p><%= order.delivery.address %><%= order.delivery.apartment ? ', ' + order.delivery.apartment : '' %></p>
+                  <p><%= order.delivery.city %>, <%= order.delivery.country %><%= order.delivery.postalCode ? ' ' + order.delivery.postalCode : '' %></p>
+                  <p><strong>Phone:</strong> <%= order.delivery.phone %></p>
+                </div>
+                <% if (order.billing && !order.billing.sameAsShipping && order.billing.address) { %>
+                <div class="info-section">
+                  <h4>Billing Address</h4>
+                  <p><strong><%= order.billing.address.firstName %> <%= order.billing.address.lastName %></strong></p>
+                  <p><%= order.billing.address.address %><%= order.billing.address.apartment ? ', ' + order.billing.address.apartment : '' %></p>
+                  <p><%= order.billing.address.city %>, <%= order.billing.address.country %><%= order.billing.address.postalCode ? ' ' + order.billing.address.postalCode : '' %></p>
+                  <p><strong>Phone:</strong> <%= order.billing.address.phone %></p>
+                </div>
+                <% } %>
+                <div class="info-section">
+                  <h4>Payment</h4>
+                  <p><strong>Method:</strong> <%= order.payment.method.toUpperCase() %></p>
+                  <p><strong>Status:</strong> <%= order.payment.status.charAt(0).toUpperCase() + order.payment.status.slice(1) %></p>
+                </div>
+              </div>
+
+              <div class="order-items">
+                <h4>Order Items</h4>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Product</th>
+                      <th>Image</th>
+                      <th>Quantity</th>
+                      <th>Price</th>
+                      <th>Subtotal</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% order.items.forEach(item => { %>
+                      <tr>
+                        <td><%= item.productName %></td>
+                        <td>
+                          <% if (item.productId && item.productId.image) { %>
+                            <img src="<%= item.productId.image %>" alt="<%= item.productName %>" />
+                          <% } else { %>
+                            <span style="color: #999;">No image</span>
+                          <% } %>
+                        </td>
+                        <td><%= item.quantity %></td>
+                        <td>Rs.<%= item.price.toLocaleString() %></td>
+                        <td>Rs.<%= (item.quantity * item.price).toLocaleString() %></td>
+                      </tr>
+                    <% }) %>
+                  </tbody>
+                </table>
+                <div class="order-total">
+                  <strong>Total: Rs.<%= order.total.toLocaleString() %></strong>
+                </div>
+              </div>
+              
+              <% if (order.status !== 'delivered') { %>
+              <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 5px;">
+                <h4 style="margin: 0 0 10px; color: #333;">Mark as Delivered</h4>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                  <div>
+                    <label style="display: block; margin-bottom: 5px; font-size: 0.9rem; color: #555;">Courier <span style="color: #dc3545;">*</span></label>
+                    <select class="courier-select" data-order-id="<%= order._id %>" required style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                      <option value="">Select Courier</option>
+                      <option value="TCS">TCS</option>
+                      <option value="M&P">M&P</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style="display: block; margin-bottom: 5px; font-size: 0.9rem; color: #555;">Tracking ID <span style="color: #dc3545;">*</span></label>
+                    <input type="text" class="tracking-id-input" data-order-id="<%= order._id %>" placeholder="Enter tracking ID" required style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                  </div>
+                  <div style="display: flex; align-items: flex-end;">
+                    <button class="delivered-btn" data-order-id="<%= order._id %>" data-order-number="<%= order.orderNumber %>" style="width: 100%;">
+                      Mark as Delivered
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <% } else if (order.trackingId) { %>
+              <div style="margin-top: 20px; padding: 15px; background: #e7f3ff; border-radius: 5px; border-left: 4px solid #007bff;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                  <h4 style="margin: 0; color: #333;">Tracking Information</h4>
+                  <button class="edit-tracking-btn" data-order-id="<%= order._id %>" data-order-number="<%= order.orderNumber %>" style="padding: 6px 12px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85rem;">Edit</button>
+                </div>
+                <p style="margin: 5px 0;"><strong>Courier:</strong> <%= order.courier || 'N/A' %></p>
+                <p style="margin: 5px 0;"><strong>Tracking ID:</strong> <%= order.trackingId %></p>
+                <% if (order.courier === 'TCS') { %>
+                  <p style="margin: 5px 0;"><a href="https://www.tcsexpress.com/tracking/<%= order.trackingId %>" target="_blank" style="color: #007bff; text-decoration: none;">Track on TCS Website →</a></p>
+                <% } else if (order.courier === 'M&P') { %>
+                  <p style="margin: 5px 0;"><a href="https://www.mulphilog.com/tracking/<%= order.trackingId %>" target="_blank" style="color: #007bff; text-decoration: none;">Track on M&P Website →</a></p>
+                <% } %>
+              </div>
+              <% } %>
+            </div>
+          <% }) %>
+        <% } else { %>
+          <div class="card">
+            <h3>No orders found</h3>
+            <p>There are no orders in the system yet.</p>
+          </div>
+        <% } %>
+        </div>
+      </div>
+
+      <!-- Pending Orders Tab -->
+      <div class="tab-content" id="tab-pending">
+        <div id="orders-container-pending">
+          <% const pendingOrdersList = orders.filter(o => o.status !== 'delivered') %>
+          <% if (pendingOrdersList.length > 0) { %>
+            <% pendingOrdersList.forEach(order => { %>
+              <div class="card">
+                <div class="order-header">
+                  <div>
+                    <div class="order-number">Order #<%= order.orderNumber %></div>
+                    <div style="font-size: 0.85rem; color: #666; margin-top: 4px;">
+                      <%= new Date(order.createdAt).toLocaleString() %>
+                    </div>
+                  </div>
+                  <div class="order-status <%= order.status %>"><%= order.status.charAt(0).toUpperCase() + order.status.slice(1) %></div>
+                </div>
+
+                <div class="order-info">
+                  <div class="info-section">
+                    <h4>Contact</h4>
+                    <p><strong>Email:</strong> <%= order.contact.email %></p>
+                    <p><strong>Newsletter:</strong> <%= order.contact.newsletter ? 'Yes' : 'No' %></p>
+                  </div>
+                  <div class="info-section">
+                    <h4>Delivery Address</h4>
+                    <p><strong><%= order.delivery.firstName %> <%= order.delivery.lastName %></strong></p>
+                    <p><%= order.delivery.address %><%= order.delivery.apartment ? ', ' + order.delivery.apartment : '' %></p>
+                    <p><%= order.delivery.city %>, <%= order.delivery.country %><%= order.delivery.postalCode ? ' ' + order.delivery.postalCode : '' %></p>
+                    <p><strong>Phone:</strong> <%= order.delivery.phone %></p>
+                  </div>
+                  <% if (order.billing && !order.billing.sameAsShipping && order.billing.address) { %>
+                  <div class="info-section">
+                    <h4>Billing Address</h4>
+                    <p><strong><%= order.billing.address.firstName %> <%= order.billing.address.lastName %></strong></p>
+                    <p><%= order.billing.address.address %><%= order.billing.address.apartment ? ', ' + order.billing.address.apartment : '' %></p>
+                    <p><%= order.billing.address.city %>, <%= order.billing.address.country %><%= order.billing.address.postalCode ? ' ' + order.billing.address.postalCode : '' %></p>
+                    <p><strong>Phone:</strong> <%= order.billing.address.phone %></p>
+                  </div>
+                  <% } %>
+                  <div class="info-section">
+                    <h4>Payment</h4>
+                    <p><strong>Method:</strong> <%= order.payment.method.toUpperCase() %></p>
+                    <p><strong>Status:</strong> <%= order.payment.status.charAt(0).toUpperCase() + order.payment.status.slice(1) %></p>
+                  </div>
+                </div>
+
+                <div class="order-items">
+                  <h4>Order Items</h4>
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Product</th>
+                        <th>Image</th>
+                        <th>Quantity</th>
+                        <th>Price</th>
+                        <th>Subtotal</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <% order.items.forEach(item => { %>
+                        <tr>
+                          <td><%= item.productName %></td>
+                          <td>
+                            <% if (item.productId && item.productId.image) { %>
+                              <img src="<%= item.productId.image %>" alt="<%= item.productName %>" />
+                            <% } else { %>
+                              <span style="color: #999;">No image</span>
+                            <% } %>
+                          </td>
+                          <td><%= item.quantity %></td>
+                          <td>Rs.<%= item.price.toLocaleString() %></td>
+                          <td>Rs.<%= (item.quantity * item.price).toLocaleString() %></td>
+                        </tr>
+                      <% }) %>
+                    </tbody>
+                  </table>
+                  <div class="order-total">
+                    <strong>Total: Rs.<%= order.total.toLocaleString() %></strong>
+                  </div>
+                </div>
+                
+                <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 5px;">
+                  <h4 style="margin: 0 0 10px; color: #333;">Mark as Delivered</h4>
+                  <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                    <div>
+                      <label style="display: block; margin-bottom: 5px; font-size: 0.9rem; color: #555;">Courier <span style="color: #dc3545;">*</span></label>
+                      <select class="courier-select" data-order-id="<%= order._id %>" required style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                        <option value="">Select Courier</option>
+                        <option value="TCS">TCS</option>
+                        <option value="M&P">M&P</option>
+                        <option value="other">Other</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label style="display: block; margin-bottom: 5px; font-size: 0.9rem; color: #555;">Tracking ID <span style="color: #dc3545;">*</span></label>
+                      <input type="text" class="tracking-id-input" data-order-id="<%= order._id %>" placeholder="Enter tracking ID" required style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                    </div>
+                    <div style="display: flex; align-items: flex-end;">
+                      <button class="delivered-btn" data-order-id="<%= order._id %>" data-order-number="<%= order.orderNumber %>" style="width: 100%;">
+                        Mark as Delivered
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            <% }) %>
+          <% } else { %>
+            <div class="card">
+              <h3>No pending orders</h3>
+              <p>All orders have been delivered.</p>
+            </div>
+          <% } %>
+        </div>
+      </div>
+
+      <!-- Delivered Orders Tab -->
+      <div class="tab-content" id="tab-delivered">
+        <div id="orders-container-delivered">
+          <% const deliveredOrdersList = orders.filter(o => o.status === 'delivered') %>
+          <% if (deliveredOrdersList.length > 0) { %>
+            <% deliveredOrdersList.forEach(order => { %>
+              <div class="card">
+                <div class="order-header">
+                  <div>
+                    <div class="order-number">Order #<%= order.orderNumber %></div>
+                    <div style="font-size: 0.85rem; color: #666; margin-top: 4px;">
+                      <%= new Date(order.createdAt).toLocaleString() %>
+                    </div>
+                  </div>
+                  <div class="order-status <%= order.status %>"><%= order.status.charAt(0).toUpperCase() + order.status.slice(1) %></div>
+                </div>
+
+                <div class="order-info">
+                  <div class="info-section">
+                    <h4>Contact</h4>
+                    <p><strong>Email:</strong> <%= order.contact.email %></p>
+                    <p><strong>Newsletter:</strong> <%= order.contact.newsletter ? 'Yes' : 'No' %></p>
+                  </div>
+                  <div class="info-section">
+                    <h4>Delivery Address</h4>
+                    <p><strong><%= order.delivery.firstName %> <%= order.delivery.lastName %></strong></p>
+                    <p><%= order.delivery.address %><%= order.delivery.apartment ? ', ' + order.delivery.apartment : '' %></p>
+                    <p><%= order.delivery.city %>, <%= order.delivery.country %><%= order.delivery.postalCode ? ' ' + order.delivery.postalCode : '' %></p>
+                    <p><strong>Phone:</strong> <%= order.delivery.phone %></p>
+                  </div>
+                  <% if (order.billing && !order.billing.sameAsShipping && order.billing.address) { %>
+                  <div class="info-section">
+                    <h4>Billing Address</h4>
+                    <p><strong><%= order.billing.address.firstName %> <%= order.billing.address.lastName %></strong></p>
+                    <p><%= order.billing.address.address %><%= order.billing.address.apartment ? ', ' + order.billing.address.apartment : '' %></p>
+                    <p><%= order.billing.address.city %>, <%= order.billing.address.country %><%= order.billing.address.postalCode ? ' ' + order.billing.address.postalCode : '' %></p>
+                    <p><strong>Phone:</strong> <%= order.billing.address.phone %></p>
+                  </div>
+                  <% } %>
+                  <div class="info-section">
+                    <h4>Payment</h4>
+                    <p><strong>Method:</strong> <%= order.payment.method.toUpperCase() %></p>
+                    <p><strong>Status:</strong> <%= order.payment.status.charAt(0).toUpperCase() + order.payment.status.slice(1) %></p>
+                  </div>
+                </div>
+
+                <div class="order-items">
+                  <h4>Order Items</h4>
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Product</th>
+                        <th>Image</th>
+                        <th>Quantity</th>
+                        <th>Price</th>
+                        <th>Subtotal</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <% order.items.forEach(item => { %>
+                        <tr>
+                          <td><%= item.productName %></td>
+                          <td>
+                            <% if (item.productId && item.productId.image) { %>
+                              <img src="<%= item.productId.image %>" alt="<%= item.productName %>" />
+                            <% } else { %>
+                              <span style="color: #999;">No image</span>
+                            <% } %>
+                          </td>
+                          <td><%= item.quantity %></td>
+                          <td>Rs.<%= item.price.toLocaleString() %></td>
+                          <td>Rs.<%= (item.quantity * item.price).toLocaleString() %></td>
+                        </tr>
+                      <% }) %>
+                    </tbody>
+                  </table>
+                  <div class="order-total">
+                    <strong>Total: Rs.<%= order.total.toLocaleString() %></strong>
+                  </div>
+                </div>
+                
+                <% if (order.trackingId) { %>
+                <div style="margin-top: 20px; padding: 15px; background: #e7f3ff; border-radius: 5px; border-left: 4px solid #007bff;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <h4 style="margin: 0; color: #333;">Tracking Information</h4>
+                    <button class="edit-tracking-btn" data-order-id="<%= order._id %>" data-order-number="<%= order.orderNumber %>" style="padding: 6px 12px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85rem;">Edit</button>
+                  </div>
+                  <p style="margin: 5px 0;"><strong>Courier:</strong> <%= order.courier || 'N/A' %></p>
+                  <p style="margin: 5px 0;"><strong>Tracking ID:</strong> <%= order.trackingId %></p>
+                  <% if (order.courier === 'TCS') { %>
+                    <p style="margin: 5px 0;"><a href="https://www.tcsexpress.com/tracking/<%= order.trackingId %>" target="_blank" style="color: #007bff; text-decoration: none;">Track on TCS Website →</a></p>
+                  <% } else if (order.courier === 'M&P') { %>
+                    <p style="margin: 5px 0;"><a href="https://www.mulphilog.com/tracking/<%= order.trackingId %>" target="_blank" style="color: #007bff; text-decoration: none;">Track on M&P Website →</a></p>
+                  <% } %>
+                </div>
+                <% } %>
+              </div>
+            <% }) %>
+          <% } else { %>
+            <div class="card">
+              <h3>No delivered orders</h3>
+              <p>No orders have been delivered yet.</p>
+            </div>
+          <% } %>
+        </div>
+      </div>
+    </main>
+
+    <script>
+      // Wait for DOM to be fully loaded before adding event listeners
+      document.addEventListener('DOMContentLoaded', function() {
+      let autoRefreshInterval = null;
+      const REFRESH_INTERVAL = 10000; // 10 seconds
+
+      async function refreshOrders() {
+        const refreshBtn = document.getElementById('refresh-btn');
+        
+        refreshBtn.disabled = true;
+        refreshBtn.textContent = 'Refreshing...';
+
+        try {
+          const response = await fetch('/api/admin/orders');
+          const result = await response.json();
+
+          if (result.success && result.data) {
+            // Update stats
+            document.getElementById('total-orders').textContent = result.data.totalOrders;
+            document.getElementById('pending-orders').textContent = result.data.pendingOrders;
+            const deliveredCount = result.data.orders.filter(o => o.status === 'delivered').length;
+            document.getElementById('delivered-orders').textContent = deliveredCount;
+            
+            // Update tab button counts
+            const allTab = document.querySelector('[data-tab="all"]');
+            const pendingTab = document.querySelector('[data-tab="pending"]');
+            const deliveredTab = document.querySelector('[data-tab="delivered"]');
+            
+            if (allTab) allTab.textContent = `All Orders (${result.data.totalOrders})`;
+            if (pendingTab) pendingTab.textContent = `Pending (${result.data.pendingOrders})`;
+            if (deliveredTab) deliveredTab.textContent = `Delivered (${deliveredCount})`;
+            
+            // Update last updated time
+            updateLastUpdated();
+            
+            // Reload the page to show updated orders with full details
+            location.reload();
+          } else {
+            alert('Failed to refresh orders: ' + (result.message || 'Unknown error'));
+            refreshBtn.disabled = false;
+            refreshBtn.textContent = 'Refresh';
+          }
+        } catch (error) {
+          console.error('Refresh error:', error);
+          alert('Error refreshing orders: ' + error.message);
+          refreshBtn.disabled = false;
+          refreshBtn.textContent = 'Refresh';
+        }
+      }
+
+      let isUserTyping = false;
+      let typingTimeout = null;
+
+      function startAutoRefresh() {
+        // Auto-refresh is disabled
+        // if (autoRefreshInterval) {
+        //   clearInterval(autoRefreshInterval);
+        // }
+        // // Only start auto-refresh if user is not typing
+        // if (!isUserTyping) {
+        //   autoRefreshInterval = setInterval(() => {
+        //     if (!isUserTyping) {
+        //       refreshOrders();
+        //     }
+        //   }, REFRESH_INTERVAL);
+        // }
+      }
+
+      function stopAutoRefresh() {
+        if (autoRefreshInterval) {
+          clearInterval(autoRefreshInterval);
+        }
+      }
+
+      // Pause auto-refresh when user is typing
+      function handleUserInput() {
+        isUserTyping = true;
+        stopAutoRefresh();
+        
+        // Clear existing timeout
+        if (typingTimeout) {
+          clearTimeout(typingTimeout);
+        }
+        
+        // Resume auto-refresh after 30 seconds of no typing
+        typingTimeout = setTimeout(() => {
+          isUserTyping = false;
+          startAutoRefresh();
+        }, 30000);
+      }
+
+      // Manual refresh button
+      document.getElementById('refresh-btn').addEventListener('click', refreshOrders);
+
+      // Auto-refresh is disabled - only manual refresh via button
+      // startAutoRefresh(); // Commented out - auto-refresh disabled
+
+      // Pause auto-refresh when user is interacting with form fields
+      document.addEventListener('input', function(e) {
+        if (e.target.classList.contains('tracking-id-input') || 
+            e.target.classList.contains('courier-select')) {
+          handleUserInput();
+        }
+      });
+
+      document.addEventListener('focus', function(e) {
+        if (e.target.classList.contains('tracking-id-input') || 
+            e.target.classList.contains('courier-select')) {
+          isUserTyping = true;
+          stopAutoRefresh();
+        }
+      }, true);
+
+      document.addEventListener('blur', function(e) {
+        if (e.target.classList.contains('tracking-id-input') || 
+            e.target.classList.contains('courier-select')) {
+          // Wait a bit before resuming to allow for button clicks
+          setTimeout(() => {
+            if (!e.target.matches(':focus')) {
+              isUserTyping = false;
+              startAutoRefresh();
+            }
+          }, 1000);
+        }
+      }, true);
+
+      // Update last updated time (only when refresh happens)
+      function updateLastUpdated() {
+        const now = new Date();
+        const timeString = now.toLocaleTimeString();
+        const dateString = now.toLocaleDateString();
+        const lastUpdatedEl = document.getElementById('last-updated');
+        if (lastUpdatedEl) {
+          lastUpdatedEl.textContent = `${dateString} ${timeString}`;
+        }
+      }
+      
+      // Set initial time
+      updateLastUpdated();
+
+      // Tab switching functionality
+      const tabButtons = document.querySelectorAll('.tab-btn');
+      const tabContents = document.querySelectorAll('.tab-content');
+      
+      if (tabButtons.length > 0 && tabContents.length > 0) {
+        tabButtons.forEach(button => {
+          button.addEventListener('click', function() {
+            const targetTab = this.dataset.tab;
+            
+            if (!targetTab) return;
+            
+            // Remove active class from all buttons and contents
+            tabButtons.forEach(btn => {
+              if (btn) btn.classList.remove('active');
+            });
+            tabContents.forEach(content => {
+              if (content) content.classList.remove('active');
+            });
+            
+            // Add active class to clicked button and corresponding content
+            this.classList.add('active');
+            const targetContent = document.getElementById(`tab-${targetTab}`);
+            if (targetContent) {
+              targetContent.classList.add('active');
+            }
+          });
+        });
+      }
+
+      // Mobile menu toggle
+      const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+      const sidebar = document.querySelector('.sidebar');
+      if (mobileMenuBtn) {
+        mobileMenuBtn.addEventListener('click', function() {
+          sidebar.classList.toggle('open');
+        });
+      }
+
+      // Auto-refresh disabled - no need for visibility change handler
+      // document.addEventListener('visibilitychange', function() {
+      //   if (document.hidden) {
+      //     stopAutoRefresh();
+      //   } else {
+      //     startAutoRefresh();
+      //   }
+      // });
+
+      // Mark order as delivered
+      document.addEventListener('click', async function(e) {
+        if (e.target.classList.contains('delivered-btn')) {
+          e.preventDefault(); // Prevent any default form submission
+          e.stopPropagation(); // Stop event bubbling
+          
+          const btn = e.target;
+          const orderId = btn.dataset.orderId;
+          const orderNumber = btn.dataset.orderNumber;
+          
+          // Find the closest parent card to get the correct inputs (handles multiple tabs)
+          const orderCard = btn.closest('.card');
+          
+          // Get tracking ID and courier from inputs within the same card
+          const trackingInput = orderCard ? orderCard.querySelector(`.tracking-id-input[data-order-id="${orderId}"]`) : document.querySelector(`.tracking-id-input[data-order-id="${orderId}"]`);
+          const courierSelect = orderCard ? orderCard.querySelector(`.courier-select[data-order-id="${orderId}"]`) : document.querySelector(`.courier-select[data-order-id="${orderId}"]`);
+          
+          // Debug logging
+          console.log('Order ID:', orderId);
+          console.log('Tracking Input found:', !!trackingInput);
+          console.log('Courier Select found:', !!courierSelect);
+          if (trackingInput) {
+            console.log('Tracking Input value:', trackingInput.value);
+          }
+          if (courierSelect) {
+            console.log('Courier Select value:', courierSelect.value);
+          }
+          
+          const trackingId = trackingInput ? trackingInput.value.trim() : '';
+          const courier = courierSelect ? courierSelect.value : '';
+          
+          // Validation: Tracking ID is required
+          if (!trackingId || trackingId === '') {
+            alert('Please enter tracking ID. Tracking ID is required to mark order as delivered.');
+            if (trackingInput) {
+              trackingInput.focus();
+              trackingInput.style.borderColor = '#dc3545';
+              setTimeout(() => {
+                trackingInput.style.borderColor = '#ddd';
+              }, 3000);
+            } else {
+              console.error('Tracking input not found for order:', orderId);
+            }
+            return;
+          }
+          
+          // Validation: Courier is required
+          if (!courier || courier === '') {
+            alert('Please select a courier. Courier selection is required.');
+            if (courierSelect) {
+              courierSelect.focus();
+              courierSelect.style.borderColor = '#dc3545';
+              setTimeout(() => {
+                courierSelect.style.borderColor = '#ddd';
+              }, 3000);
+            }
+            return;
+          }
+          
+          if (!confirm(`Are you sure you want to mark order ${orderNumber} as delivered?${trackingId ? '\n\nTracking ID: ' + trackingId + '\nCourier: ' + courier : ''}\n\nThis will send an email to the customer.`)) {
+            return;
+          }
+          
+          btn.disabled = true;
+          btn.textContent = 'Processing...';
+          
+          try {
+            const response = await fetch(`/api/orders/${orderId}/status`, {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              credentials: 'include',
+              body: JSON.stringify({ 
+                status: 'delivered',
+                trackingId: trackingId,
+                courier: courier || null
+              })
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+              alert('Order marked as delivered! Email sent to customer.' + (trackingId ? '\n\nTracking ID: ' + trackingId : ''));
+              // Reload page to show updated status
+              location.reload();
+            } else {
+              alert('Failed to update order: ' + (result.message || 'Unknown error'));
+              btn.disabled = false;
+              btn.textContent = 'Mark as Delivered';
+            }
+          } catch (error) {
+            console.error('Error updating order status:', error);
+            alert('Error updating order: ' + error.message);
+            btn.disabled = false;
+            btn.textContent = 'Mark as Delivered';
+          }
+        }
+      });
+
+      // Edit tracking information for delivered orders
+      document.addEventListener('click', async function(e) {
+        if (e.target.classList.contains('edit-tracking-btn')) {
+          e.preventDefault();
+          e.stopPropagation();
+          
+          const btn = e.target;
+          const orderId = btn.dataset.orderId;
+          const orderNumber = btn.dataset.orderNumber;
+          
+          // Fetch current order data
+          try {
+            const response = await fetch(`/api/orders/${orderId}`, {
+              credentials: 'include'
+            });
+            const result = await response.json();
+            
+            if (result.success && result.data) {
+              const order = result.data;
+              
+              // Populate modal with current values
+              document.getElementById('edit-tracking-order-id').value = orderId;
+              document.getElementById('edit-tracking-order-number').textContent = orderNumber;
+              document.getElementById('edit-tracking-courier').value = order.courier || '';
+              document.getElementById('edit-tracking-id').value = order.trackingId || '';
+              
+              // Show current info
+              const currentInfoDiv = document.getElementById('current-tracking-info');
+              currentInfoDiv.innerHTML = `
+                <p><strong>Current Courier:</strong> ${order.courier || 'N/A'}</p>
+                <p><strong>Current Tracking ID:</strong> ${order.trackingId || 'N/A'}</p>
+              `;
+              
+              // Show modal
+              document.getElementById('edit-tracking-modal').style.display = 'block';
+            } else {
+              alert('Failed to load order details: ' + (result.message || 'Unknown error'));
+            }
+          } catch (error) {
+            console.error('Error loading order:', error);
+            alert('Error loading order: ' + error.message);
+          }
+        }
+      });
+
+      // Handle edit tracking form submission
+      const editTrackingForm = document.getElementById('edit-tracking-form');
+      if (editTrackingForm) {
+        editTrackingForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const orderId = document.getElementById('edit-tracking-order-id').value;
+        const trackingId = document.getElementById('edit-tracking-id').value.trim();
+        const courier = document.getElementById('edit-tracking-courier').value;
+        
+        // Validation
+        if (!trackingId || trackingId === '') {
+          alert('Please enter tracking ID. Tracking ID is required.');
+          document.getElementById('edit-tracking-id').focus();
+          return;
+        }
+        
+        if (!courier || courier === '') {
+          alert('Please select a courier. Courier selection is required.');
+          document.getElementById('edit-tracking-courier').focus();
+          return;
+        }
+        
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const originalText = submitBtn.textContent;
+        
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Updating...';
+        
+        try {
+          const response = await fetch(`/api/orders/${orderId}/status`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            credentials: 'include',
+            body: JSON.stringify({
+              status: 'delivered', // Keep status as delivered
+              trackingId: trackingId,
+              courier: courier,
+              updateTracking: true // Flag to indicate this is a tracking update, not status change
+            })
+          });
+          
+          const result = await response.json();
+          
+          if (result.success) {
+            alert('Tracking information updated successfully! Email sent to customer with updated details.');
+            // Close modal
+            document.getElementById('edit-tracking-modal').style.display = 'none';
+            // Reload page to show updated information
+            location.reload();
+          } else {
+            alert('Failed to update tracking information: ' + (result.message || 'Unknown error'));
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+          }
+        } catch (error) {
+          console.error('Error updating tracking information:', error);
+          alert('Error updating tracking information: ' + error.message);
+          submitBtn.disabled = false;
+          submitBtn.textContent = originalText;
+        }
+      });
+      }
+
+      // Close edit tracking modal
+      function closeEditTrackingModal() {
+        const modal = document.getElementById('edit-tracking-modal');
+        const form = document.getElementById('edit-tracking-form');
+        if (modal) {
+          modal.style.display = 'none';
+        }
+        if (form) {
+          form.reset();
+        }
+      }
+
+      // Add event listeners for modal close buttons (with null checks)
+      const closeModalBtn = document.getElementById('close-edit-tracking-modal');
+      const cancelBtn = document.getElementById('cancel-edit-tracking-btn');
+      const editTrackingModal = document.getElementById('edit-tracking-modal');
+      
+      if (closeModalBtn) {
+        closeModalBtn.addEventListener('click', closeEditTrackingModal);
+      }
+      
+      if (cancelBtn) {
+        cancelBtn.addEventListener('click', closeEditTrackingModal);
+      }
+
+      // Close modal when clicking outside
+      if (editTrackingModal) {
+        editTrackingModal.addEventListener('click', function(e) {
+          if (e.target === this) {
+            closeEditTrackingModal();
+          }
+        });
+      }
+      }); // End of DOMContentLoaded
+    </script>
+    
+    <!-- Edit Tracking Modal -->
+    <div id="edit-tracking-modal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Edit Tracking Information</h2>
+          <button class="close-modal" id="close-edit-tracking-modal">Close</button>
+        </div>
+        <div class="current-info" id="current-tracking-info">
+          <p><strong>Current Courier:</strong> Loading...</p>
+          <p><strong>Current Tracking ID:</strong> Loading...</p>
+        </div>
+        <form id="edit-tracking-form">
+          <input type="hidden" id="edit-tracking-order-id" />
+          <div class="form-group">
+            <label class="form-label">Order Number</label>
+            <p style="margin: 0; padding: 10px; background: #f8f9fa; border-radius: 4px; color: #333; font-weight: bold;" id="edit-tracking-order-number">-</p>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Courier <span>*</span></label>
+            <select id="edit-tracking-courier" class="form-select" required>
+              <option value="">Select Courier</option>
+              <option value="TCS">TCS</option>
+              <option value="M&P">M&P</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Tracking ID <span>*</span></label>
+            <input type="text" id="edit-tracking-id" class="form-input" placeholder="Enter tracking ID" required />
+          </div>
+          <div style="margin-top: 20px; display: flex; gap: 10px;">
+            <button type="submit" style="flex: 1; padding: 10px 16px; background: #007bff; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: 600;">Update Tracking</button>
+            <button type="button" id="cancel-edit-tracking-btn" style="flex: 1; padding: 10px 16px; background: #6c757d; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </body>
+</html>
+
