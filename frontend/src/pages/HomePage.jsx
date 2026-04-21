@@ -1,12 +1,15 @@
 import { Link } from 'react-router-dom'
 
+const homeImage = new URL('../../assets/img/h1.png', import.meta.url).href
+const storyImage = new URL('../../assets/img/story.png', import.meta.url).href
+
 export function HomePage({ products, loading, error, onAddToCart }) {
   return (
     <>
       <section className="home" id="home">
         <div className="home__container container grid">
           <div className="home__img-bg">
-            <img src="/assets/img/h1.png" className="home__img" alt="Kick Thrift shoe" />
+            <img src={homeImage} className="home__img" alt="Kick Thrift shoe" />
           </div>
 
           <div className="home__social">
@@ -67,7 +70,7 @@ export function HomePage({ products, loading, error, onAddToCart }) {
           </div>
 
           <div className="story__images">
-            <img src="/assets/img/story.png" alt="Our Story" className="story__img" />
+            <img src={storyImage} alt="Our Story" className="story__img" />
             <div className="story__square" />
           </div>
         </div>
