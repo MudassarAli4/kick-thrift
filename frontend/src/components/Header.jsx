@@ -1,4 +1,5 @@
 import { Link, NavLink } from 'react-router-dom'
+import shoeFavicon from '../assets/img/shoe-favicon.png'
 
 export function Header({ menuOpen, onOpenMenu, onCloseMenu, onToggleTheme, onOpenCart, cartCount, scrollHeader }) {
   return (
@@ -6,7 +7,7 @@ export function Header({ menuOpen, onOpenMenu, onCloseMenu, onToggleTheme, onOpe
       <nav className="nav container">
         <Link to="/" className="nav__logo" onClick={onCloseMenu}>
           <img
-            src="/assets/img/shoe-favicon.png"
+            src={shoeFavicon}
             alt="Kick Thrift"
             className="nav__logo-icon"
             style={{ width: '20px', height: '20px', objectFit: 'contain', marginRight: '8px' }}
