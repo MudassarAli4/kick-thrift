@@ -32,7 +32,7 @@ export function HomePage({ products, loading, error, onAddToCart }) {
             <p className="home__description">
               Fresh imported shoe drops with modern style, comfort, and everyday durability.
             </p>
-            <span className="home__price">Rs.6000</span>
+            {/* <span className="home__price">Rs.6000</span> */}
 
             <div className="home__btns">
               <Link to="/products" className="button button--gray button--small">

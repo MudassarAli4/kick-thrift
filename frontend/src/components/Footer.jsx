@@ -26,7 +26,7 @@ export function Footer() {
             </li>
             <li>
               <i className="bx bx-envelope" />
-              <a href="mailto:mudassir18102003@gmail.com" className="footer__link">mudassir18102003@gmail.com</a>
+              <a href="mailto:info@kickthrift.com" className="footer__link">info@kickthrift.com</a>
             </li>
           </ul>
         </div>
