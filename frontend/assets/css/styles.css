@@ -193,6 +193,8 @@ body.dark-theme {
 
 /*=============== COMING SOON ===============*/
 .coming-soon {
+  position: relative;
+  overflow: hidden;
   width: 100%;
   grid-column: 1 / -1;
   text-align: center;
@@ -200,17 +202,42 @@ body.dark-theme {
   border: 1px solid var(--border-color);
   border-radius: 0.75rem;
   padding: 2.5rem 1.25rem;
+  box-shadow: 0 8px 24px hsla(31, 90%, 60%, 0.08);
+  animation: comingSoonGlow 2.8s ease-in-out infinite;
+}
+
+.coming-soon::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -40%;
+  width: 30%;
+  height: 100%;
+  background: linear-gradient(
+    110deg,
+    transparent 0%,
+    hsla(31, 90%, 70%, 0.22) 50%,
+    transparent 100%
+  );
+  transform: skewX(-20deg);
+  animation: comingSoonShine 3.2s linear infinite;
 }
 
 .coming-soon__title {
+  position: relative;
+  z-index: 1;
   margin-bottom: 0.75rem;
-  color: var(--title-color);
+  color: var(--first-color);
   font-size: var(--h2-font-size);
   letter-spacing: 0.5px;
   text-transform: uppercase;
+  text-shadow: 0 0 14px hsla(31, 90%, 60%, 0.28);
+  animation: comingSoonTitlePulse 1.8s ease-in-out infinite;
 }
 
 .coming-soon__text {
+  position: relative;
+  z-index: 1;
   max-width: 620px;
   margin: 0 auto;
   color: var(--text-color);
@@ -219,6 +246,39 @@ body.dark-theme {
 
 .products-page__coming-soon {
   margin-top: 1rem;
+}
+
+@keyframes comingSoonGlow {
+  0%,
+  100% {
+    border-color: var(--border-color);
+    box-shadow: 0 8px 24px hsla(31, 90%, 60%, 0.08);
+  }
+  50% {
+    border-color: hsla(31, 90%, 60%, 0.45);
+    box-shadow: 0 14px 30px hsla(31, 90%, 60%, 0.2);
+  }
+}
+
+@keyframes comingSoonTitlePulse {
+  0%,
+  100% {
+    color: var(--title-color);
+    text-shadow: 0 0 0 hsla(31, 90%, 60%, 0);
+  }
+  50% {
+    color: var(--first-color);
+    text-shadow: 0 0 18px hsla(31, 90%, 60%, 0.38);
+  }
+}
+
+@keyframes comingSoonShine {
+  0% {
+    left: -40%;
+  }
+  100% {
+    left: 120%;
+  }
 }
 
 /*=============== HEADER & NAV ===============*/
