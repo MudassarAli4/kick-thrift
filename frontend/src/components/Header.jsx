@@ -1,9 +1,9 @@
 import { Link, NavLink } from 'react-router-dom'
-import shoeFavicon from '../assets/img/shoe-favicon.png'
+const shoeFavicon = new URL('../../assets/img/shoe-favicon.png', import.meta.url).href
 
 export function Header({ menuOpen, onOpenMenu, onCloseMenu, onToggleTheme, onOpenCart, cartCount, scrollHeader }) {
   return (
-    <header className={`header ${scrollHeader ? 'scroll-header' : ''}`} id="header">
+    <header className={`header ${scrollHeader ? 'scroll-header' : ''} ${menuOpen ? 'menu-open' : ''}`} id="header">
       <nav className="nav container">
         <Link to="/" className="nav__logo" onClick={onCloseMenu}>
           <img
