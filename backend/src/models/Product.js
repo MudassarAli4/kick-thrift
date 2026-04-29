@@ -4,7 +4,13 @@ const productSchema = new mongoose.Schema({
   name: { type: String, required: true, trim: true },
   price: { type: Number, required: true },
   oldPrice: { type: Number },
+  buyPrice: { type: Number },
+  advancePayment: { type: Number },
+  receivedAmount: { type: Number },
+  remainingPayment: { type: Number },
+  sellingPrice: { type: Number },
   image: { type: String },
+  images: [{ type: String }],
   availability: { type: String, enum: ['in-stock', 'out-of-stock'], default: 'in-stock' },
   description: { type: String },
   // Product specifications

@@ -8,12 +8,19 @@ export function formatPrice(value) {
 }
 
 export function normalizeProduct(product) {
+  const images = Array.isArray(product.images)
+    ? product.images.filter(Boolean)
+    : product.image
+      ? [product.image]
+      : []
+
   return {
     id: product._id || product.id,
     name: product.name,
     price: product.price,
     oldPrice: product.oldPrice || null,
-    image: product.image,
+    image: product.image || images[0] || '',
+    images,
     availability: product.availability || 'in-stock',
     onSale: Boolean(product.onSale),
     description: product.description || '',

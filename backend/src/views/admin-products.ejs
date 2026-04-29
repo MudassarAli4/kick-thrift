@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Products</title>
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body { font-family: Arial, Helvetica, sans-serif; background: #f5f5f5; margin: 0; }
+      .sidebar { position: fixed; left: 0; top: 0; width: 250px; height: 100vh; background: #1a1a1a; color: #fff; padding: 20px 0; overflow-y: auto; z-index: 100; }
+      .sidebar-header { padding: 0 20px 30px; border-bottom: 1px solid #333; margin-bottom: 20px; }
+      .sidebar-header h1 { color: #fff; font-size: 1.5rem; }
+      .nav-menu { list-style: none; }
+      .nav-item { margin: 0; }
+      .nav-link { display: block; padding: 15px 20px; color: #ccc; text-decoration: none; transition: all 0.3s; border-left: 3px solid transparent; }
+      .nav-link:hover, .nav-link.active { background: #2a2a2a; color: #fff; border-left-color: #007bff; }
+      .main-content { margin-left: 250px; padding: 30px; min-height: 100vh; }
+      .top-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid #ddd; }
+      h1, h2, h3 { color: #333; }
+      .grid { display: grid; gap: 24px; }
+      .card { background: #fff; border: 1px solid #eee; border-radius: 8px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+      .error { background: #fee; color: #c33; padding: 12px; border-radius: 4px; margin-bottom: 16px; }
+      .products-table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+      .products-table th, .products-table td { text-align: left; padding: 12px; border-bottom: 1px solid #f0f0f0; vertical-align: top; }
+      .products-table th { background: #f8f8f8; font-weight: 600; }
+      .product-thumb { width: 70px; height: 70px; object-fit: cover; border-radius: 8px; border: 1px solid #ddd; background: #fff; }
+      .price-input { width: 140px; min-width: 120px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; }
+      .save-btn { background: #007bff; color: #fff; border: none; border-radius: 4px; padding: 10px 14px; cursor: pointer; }
+      .save-btn:hover { background: #0056b3; }
+      .save-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+      .product-name { font-weight: 600; color: #222; }
+      .muted { color: #777; font-size: 0.9rem; }
+      .summary-card { margin-bottom: 18px; }
+      .summary-label { color: #666; font-size: 0.9rem; margin-bottom: 6px; }
+      .summary-value { font-size: 1.8rem; font-weight: 700; color: #111; }
+      .mobile-menu-btn { display: none; }
+      @media (max-width: 968px) { .sidebar { width: 200px; } .main-content { margin-left: 200px; padding: 20px; } }
+      @media (max-width: 768px) { .sidebar { transform: translateX(-100%); transition: transform 0.3s; } .sidebar.open { transform: translateX(0); } .main-content { margin-left: 0; } .mobile-menu-btn { display: block; position: fixed; top: 20px; left: 20px; z-index: 101; background: #1a1a1a; color: #fff; border: none; padding: 10px; border-radius: 4px; cursor: pointer; } .products-table { display: block; overflow-x: auto; white-space: nowrap; } }
+    </style>
+  </head>
+  <body>
+    <aside class="sidebar">
+      <div class="sidebar-header"><h1>Kick Thrift Admin</h1></div>
+      <nav>
+        <ul class="nav-menu">
+          <li class="nav-item"><a href="/admin/dashboard" class="nav-link">Dashboard</a></li>
+          <li class="nav-item"><a href="/admin/products" class="nav-link active">Products</a></li>
+          <li class="nav-item"><a href="/admin/orders" class="nav-link">Orders</a></li>
+        </ul>
+      </nav>
+      <div style="padding: 20px; border-top: 1px solid #333; margin-top: auto;">
+        <form action="/admin/logout" method="post" style="margin: 0;">
+          <button type="submit" style="width: 100%; padding: 12px; background: #dc3545; color: #fff; border: none; border-radius: 4px; cursor: pointer;">Logout</button>
+        </form>
+      </div>
+    </aside>
+
+    <button class="mobile-menu-btn" id="mobile-menu-btn">☰</button>
+
+    <main class="main-content">
+      <% const totalAmountReceived = products.reduce((sum, product) => sum + (Number(product.receivedAmount) || 0), 0); %>
+      <% const totalSellingPrice = products.reduce((sum, product) => sum + (Number(product.sellingPrice) || 0), 0); %>
+      <div class="top-header">
+        <div>
+          <h2>Products</h2>
+          <p class="muted">Update selling price, advance, received, and remaining amounts separately from the public product price.</p>
+        </div>
+      </div>
+
+      <% if (error) { %>
+        <div class="error"><%= error %></div>
+      <% } %>
+
+      <div class="card summary-card">
+        <div class="summary-label">Total Amount Received</div>
+        <div class="summary-value" id="total-amount-received">PKR <%= totalAmountReceived.toFixed(2) %></div>
+      </div>
+
+      <div class="card summary-card">
+        <div class="summary-label">Total Selling Price</div>
+        <div class="summary-value" id="total-selling-price">PKR <%= totalSellingPrice.toFixed(2) %></div>
+      </div>
+
+      <div class="card">
+        <h2>Product Pricing Tab (<%= products.length %>)</h2>
+        <table class="products-table">
+          <thead>
+            <tr>
+              <th>Image</th>
+              <th>Name</th>
+              <th>Buy Price</th>
+              <th>Selling Price</th>
+              <th>Advance Payment</th>
+              <th>Received Amount</th>
+              <th>Remaining Payment</th>
+              <th>Save</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% products.forEach((product) => { %>
+              <tr data-product-id="<%= product._id %>">
+                <td>
+                  <% const productImage = Array.isArray(product.images) && product.images.length > 0 ? product.images[0] : product.image; %>
+                  <% if (productImage) { %>
+                    <img src="<%= productImage %>" alt="<%= product.name %>" class="product-thumb" />
+                  <% } else { %>
+                    <span class="muted">No image</span>
+                  <% } %>
+                </td>
+                <td>
+                  <div class="product-name"><%= product.name %></div>
+                </td>
+                <td>
+                  <input type="number" class="price-input" name="buyPrice" value="<%= product.buyPrice ?? '' %>" step="0.01" placeholder="Buy price" />
+                </td>
+                <td>
+                  <input type="number" class="price-input" name="sellingPrice" value="<%= product.sellingPrice ?? '' %>" step="0.01" placeholder="Selling price" />
+                </td>
+                <td>
+                  <input type="number" class="price-input" name="advancePayment" value="<%= product.advancePayment ?? '' %>" step="0.01" placeholder="Advance payment" />
+                </td>
+                <td>
+                  <input type="number" class="price-input" name="receivedAmount" value="<%= product.receivedAmount ?? '' %>" step="0.01" placeholder="Received amount" />
+                </td>
+                <td>
+                  <input type="number" class="price-input" name="remainingPayment" value="<%= product.remainingPayment ?? ((Number(product.sellingPrice) || 0) - (Number(product.receivedAmount) || 0)) %>" step="0.01" placeholder="Remaining payment" />
+                </td>
+                <td>
+                  <button type="button" class="save-btn" data-action="save-pricing" data-product-id="<%= product._id %>">Save</button>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </main>
+
+    <script>
+      const mobileMenuBtn = document.getElementById('mobile-menu-btn')
+      const sidebar = document.querySelector('.sidebar')
+      if (mobileMenuBtn) {
+        mobileMenuBtn.addEventListener('click', function() {
+          sidebar.classList.toggle('open')
+        })
+      }
+
+      document.addEventListener('click', async function(event) {
+        const button = event.target.closest('[data-action="save-pricing"]')
+        if (!button) return
+
+        const productId = button.dataset.productId
+        const row = button.closest('tr')
+        const buyPrice = row.querySelector('input[name="buyPrice"]').value
+        const sellingPrice = row.querySelector('input[name="sellingPrice"]').value
+        const advancePayment = row.querySelector('input[name="advancePayment"]').value
+        const receivedAmount = row.querySelector('input[name="receivedAmount"]').value
+        const remainingPayment = row.querySelector('input[name="remainingPayment"]').value
+
+        button.disabled = true
+        const originalText = button.textContent
+        button.textContent = 'Saving...'
+
+        try {
+          const response = await fetch(`/admin/products/${productId}/pricing`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ buyPrice, sellingPrice, advancePayment, receivedAmount, remainingPayment })
+          })
+
+          const result = await response.json()
+          if (!response.ok || !result.success) {
+            throw new Error(result.message || 'Failed to update pricing')
+          }
+
+          const currentSelling = Number(sellingPrice) || 0
+          const currentReceived = Number(receivedAmount) || 0
+          if (!remainingPayment) {
+            const remainingInput = row.querySelector('input[name="remainingPayment"]')
+            if (remainingInput) {
+              remainingInput.value = Math.max(currentSelling - currentReceived, 0).toFixed(2)
+            }
+          }
+
+          const rows = Array.from(document.querySelectorAll('tr[data-product-id]'))
+          const totalReceived = rows.reduce((sum, currentRow) => {
+            const received = Number(currentRow.querySelector('input[name="receivedAmount"]').value) || 0
+            return sum + received
+          }, 0)
+
+          const totalSelling = rows.reduce((sum, currentRow) => {
+            const rowSelling = Number(currentRow.querySelector('input[name="sellingPrice"]').value) || 0
+            return sum + rowSelling
+          }, 0)
+
+          const totalAmountEl = document.getElementById('total-amount-received')
+          if (totalAmountEl) {
+            totalAmountEl.textContent = `PKR ${totalReceived.toFixed(2)}`
+          }
+
+          const totalSellingEl = document.getElementById('total-selling-price')
+          if (totalSellingEl) {
+            totalSellingEl.textContent = `PKR ${totalSelling.toFixed(2)}`
+          }
+
+          button.textContent = 'Saved'
+          setTimeout(() => { button.textContent = originalText; button.disabled = false }, 1000)
+        } catch (error) {
+          alert(error.message || 'Could not update pricing')
+          button.disabled = false
+          button.textContent = originalText
+        }
+      })
+    </script>
+  </body>
+</html>

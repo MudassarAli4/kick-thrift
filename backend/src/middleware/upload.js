@@ -17,6 +17,10 @@ const upload = multer({
 })
 
 export const uploadSingle = upload.single('image')
+export const uploadProductImages = upload.fields([
+  { name: 'images', maxCount: 8 },
+  { name: 'image', maxCount: 1 }
+])
 
 export async function uploadToCloudinary(file) {
   if (!file || !file.buffer) {
@@ -41,5 +45,14 @@ export async function uploadToCloudinary(file) {
     const stream = Readable.from(file.buffer)
     stream.pipe(uploadStream)
   })
+}
+
+export async function uploadFilesToCloudinary(files = []) {
+  const validFiles = Array.isArray(files) ? files.filter(Boolean) : []
+  if (validFiles.length === 0) {
+    return []
+  }
+
+  return Promise.all(validFiles.map((file) => uploadToCloudinary(file)))
 }
 

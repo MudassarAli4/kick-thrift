@@ -1,9 +1,13 @@
 import { Link } from 'react-router-dom'
+import { ProductCard } from '../components/ProductCard'
 
 const homeImage = new URL('../../assets/img/h1.png', import.meta.url).href
 const storyImage = new URL('../../assets/img/story.png', import.meta.url).href
 
 export function HomePage({ products, loading, error, onAddToCart }) {
+  const featured = products.filter((p) => p.onSale).slice(0, 3)
+  const regular = products.filter((p) => !p.onSale).slice(0, 6)
+
   return (
     <>
       <section className="home" id="home">
@@ -49,12 +53,11 @@ export function HomePage({ products, loading, error, onAddToCart }) {
       <section className="featured section container" id="featured">
         <h2 className="section__title">Featured</h2>
         <div className="featured__container grid" id="featured-container">
-          <div className="coming-soon">
-            <h3 className="coming-soon__title">Featured Collection Coming Soon</h3>
-            <p className="coming-soon__text">
-              We are preparing a premium featured lineup. Stay tuned for the next curated drop.
-            </p>
-          </div>
+          {loading ? <p>Loading featured products...</p> : null}
+          {!loading && error ? <p>{error}</p> : null}
+          {!loading && !error
+            ? featured.map((product) => <ProductCard key={product.id} product={product} type="featured" onAddToCart={onAddToCart} />)
+            : null}
         </div>
       </section>
 
@@ -80,12 +83,16 @@ export function HomePage({ products, loading, error, onAddToCart }) {
         <h2 className="section__title">Products</h2>
 
         <div className="products__container grid" id="index-products-container">
-          <div className="coming-soon">
-            <h3 className="coming-soon__title">Products Section Coming Soon</h3>
-            <p className="coming-soon__text">
-              Our catalog is being refreshed with new arrivals and updated inventory details.
-            </p>
-          </div>
+          {loading ? <p>Loading products...</p> : null}
+          {!loading && error ? <p>{error}</p> : null}
+          {!loading && !error
+            ? regular.map((product) => <ProductCard key={product.id} product={product} onAddToCart={onAddToCart} />)
+            : null}
+          {!loading && !error && regular.length === 0 ? <p>No products available at the moment.</p> : null}
+        </div>
+
+        <div className="products__view-all">
+          <Link to="/products" className="button">View All</Link>
         </div>
       </section>
 

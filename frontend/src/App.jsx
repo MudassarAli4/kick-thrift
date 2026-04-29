@@ -118,7 +118,8 @@ function App() {
         {
           id: product.id,
           name: product.name,
-          image: product.image,
+          image: product.image || product.images?.[0] || '',
+          images: product.images || (product.image ? [product.image] : []),
           price: product.price,
           oldPrice: product.oldPrice,
           availability: product.availability,
